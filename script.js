@@ -1,78 +1,41 @@
+function predict() {
+    const sku = document.getElementById('skuInput').value.trim();
+    const price = parseInt(document.getElementById('priceInput').value);
 
-const productMap = {
-  "MS327CI": {
-    name: "New Balance MS327CI",
-    ebayPrice: 135000,
-    stockxPrice: 129000,
-    ebaySales: 38,
-    stockxSales: 14
-  },
-  "511416-010": {
-    name: "Nike Air Max Correlate",
-    ebayPrice: 139000,
-    stockxPrice: 132000,
-    ebaySales: 42,
-    stockxSales: 12
-  },
-  "U574RZ2": {
-    name: "New Balance U574RZ2",
-    ebayPrice: 142000,
-    stockxPrice: 138000,
-    ebaySales: 28,
-    stockxSales: 18
-  },
-  "JOG-100S": {
-    name: "Nike Jogger Pants JOG-100S",
-    ebayPrice: 89000,
-    stockxPrice: 95000,
-    ebaySales: 31,
-    stockxSales: 9
-  }
-};
+    if (!sku || !price) {
+        document.getElementById('result').innerText = "SKU와 가격을 입력해주세요.";
+        return;
+    }
 
-function getSKUFromURL() {
-  const params = new URLSearchParams(window.location.search);
-  return params.get("sku") ? params.get("sku").toUpperCase() : null;
-}
+    // 테스트용 SKU별 가격 (향후 외부 연동 가능)
+    const overseasPrices = {
+        "JOG-100S": 135000,
+        "MS327CI": 143000,
+        "U574RZ2": 132000
+    };
 
-const sku = getSKUFromURL();
-let product = sku && productMap[sku];
+    const ebayPrice = overseasPrices[sku.toUpperCase()];
+    if (!ebayPrice) {
+        document.getElementById('result').innerText = "등록되지 않은 SKU입니다.";
+        return;
+    }
 
-if (sku) {
-  document.getElementById("skuInfo").innerHTML = product
-    ? `SKU: ${sku}<br>제품명: ${product.name}`
-    : `SKU: ${sku}<br>알 수 없는 제품입니다 (등록 필요)`;
-}
+    const fee = Math.round(ebayPrice * 0.12);
+    const shipping = 18000;
+    const profit = ebayPrice - fee - shipping - price;
 
-function analyze() {
-  if (!product) {
-    document.getElementById("result").innerHTML = "해당 SKU는 현재 등록되어 있지 않습니다.";
-    return;
-  }
+    let decision = '❌ 제외';
+    if (profit > 10000) {
+        decision = '✔ 추천';
+    } else if (profit > 0) {
+        decision = '⚠ 테스트';
+    }
 
-  const krPrice = parseInt(document.getElementById("krPrice").value);
-  if (isNaN(krPrice)) {
-    document.getElementById("result").innerText = "국내가를 입력해주세요.";
-    return;
-  }
-
-  const ebayPrice = product.ebayPrice;
-  const fee = Math.round(ebayPrice * 0.12);
-  const shipping = 18000;
-  const netProfit = ebayPrice - fee - shipping - krPrice;
-
-  let recommendation = "✔ 추천";
-  if (netProfit < 10000) recommendation = "⚠ 테스트";
-  if (netProfit < 0) recommendation = "❌ 제외";
-
-  document.getElementById("result").innerHTML = `
-    <b>eBay 평균가:</b> ₩${ebayPrice}<br>
-    <b>StockX 시세:</b> ₩${product.stockxPrice}<br>
-    <b>30일 eBay 판매량:</b> ${product.ebaySales}건<br>
-    <b>국내가:</b> ₩${krPrice}<br>
-    <b>수수료:</b> ₩${fee}<br>
-    <b>배송비:</b> ₩${shipping}<br>
-    <b>예상 순이익:</b> ₩${netProfit}<br>
-    <b>추천 결과:</b> ${recommendation}
-  `;
+    document.getElementById('result').innerHTML = 
+        `eBay 시세: ₩${ebayPrice}<br>` +
+        `수수료: ₩${fee}<br>` +
+        `배송비: ₩${shipping}<br>` +
+        `국내가: ₩${price}<br>` +
+        `예상 순이익: ₩${profit}<br>` +
+        `판단: ${decision}`;
 }
